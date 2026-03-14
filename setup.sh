@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 echo "Starting bootstrapping process..."
 
@@ -28,7 +28,7 @@ elif [ "$OS" = "Linux" ]; then
     echo "Linux detected."
     if command -v apt-get &> /dev/null; then
         echo "Updating APT repository..."
-        sudo apt-get update
+        sudo apt-get update -y
         if ! command -v ansible &> /dev/null; then
             echo "Installing Ansible..."
             sudo apt-get install -y ansible

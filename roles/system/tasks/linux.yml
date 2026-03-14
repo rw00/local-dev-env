@@ -1,7 +1,7 @@
 ---
 - name: Linux | Update apt cache
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
   become: true
 
 - name: Linux | Install basic system tools

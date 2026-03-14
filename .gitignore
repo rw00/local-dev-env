@@ -1,0 +1,23 @@
+# Ansible
+*.retry
+.ansible/
+collections/
+
+# Ansible Lint
+.ansible-lint
+
+# Log files
+*.log
+
+# Sensitive information (Ansible Vault passwords)
+*.vault_pass
+.vault_pass
+
+# Vagrant
+.vagrant/
+
+# Development Environment / IDEs
+.idea/
+.vscode/
+*~
+.DS_Store

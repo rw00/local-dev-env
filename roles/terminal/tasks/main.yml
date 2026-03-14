@@ -1,65 +1,62 @@
 ---
 - name: Determine user home directory safely
   ansible.builtin.set_fact:
-    current_home: "{{ ansible_env.HOME }}"
+    terminal_current_home: "{{ ansible_user_dir }}"
 
-- name: Check if Oh My Zsh is already installed
-  ansible.builtin.stat:
-    path: "{{ current_home }}/.oh-my-zsh"
-  register: ohmyzsh_dir
-  become: false
-
-- name: Download Oh My Zsh installation script
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: /tmp/install_ohmyzsh.sh
-    mode: '0755'
-  when: not ohmyzsh_dir.stat.exists
-  become: false
-
-- name: Install Oh My Zsh
-  ansible.builtin.shell: /tmp/install_ohmyzsh.sh --unattended
-  when: not ohmyzsh_dir.stat.exists
+- name: Clone Oh My Zsh
+  ansible.builtin.git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git # noqa: latest[git]
+    dest: "{{ terminal_current_home }}/.oh-my-zsh"
+    depth: 1
+    update: false
   become: false
 
 - name: Ensure custom plugins directory exists
   ansible.builtin.file:
-    path: "{{ current_home }}/.oh-my-zsh/custom/plugins"
+    path: "{{ terminal_current_home }}/.oh-my-zsh/custom/plugins"
     state: directory
     mode: '0755'
   become: false
 
-- name: Clone zsh-syntax-highlighting plugin
+- name: Clone zsh-syntax-highlighting plugin # noqa: latest[git]
   ansible.builtin.git:
     repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
-    dest: "{{ current_home }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+    dest: "{{ terminal_current_home }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
     depth: 1
-    update: yes
+    update: false
   become: false
 
-- name: Clone zsh-autosuggestions plugin
+- name: Clone zsh-autosuggestions plugin # noqa: latest[git]
   ansible.builtin.git:
     repo: https://github.com/zsh-users/zsh-autosuggestions.git
-    dest: "{{ current_home }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+    dest: "{{ terminal_current_home }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
     depth: 1
-    update: yes
+    update: false
   become: false
 
 - name: Deploy .zshrc template
   ansible.builtin.template:
     src: "{{ playbook_dir }}/dotfiles/.zshrc.j2"
-    dest: "{{ current_home }}/.zshrc"
-    backup: yes
+    dest: "{{ terminal_current_home }}/.zshrc"
+    backup: true
+    mode: '0644'
   become: false
 
 - name: Find zsh executable dynamically
   ansible.builtin.command: which zsh
-  register: zsh_path
+  register: terminal_zsh_path
   changed_when: false
   become: false
 
-- name: Set zsh as the default shell
+- name: Set zsh as the default shell (Linux)
   ansible.builtin.user:
-    name: "{{ ansible_env.USER }}"
-    shell: "{{ zsh_path.stdout }}"
+    name: "{{ ansible_user_id }}"
+    shell: "{{ terminal_zsh_path.stdout }}"
   become: true
+  when: ansible_os_family != 'Darwin'
+
+- name: Set zsh as the default shell (macOS)
+  ansible.builtin.command: "chsh -s {{ terminal_zsh_path.stdout }} {{ ansible_user_id }}"
+  become: true
+  when: ansible_os_family == 'Darwin'
+  changed_when: false

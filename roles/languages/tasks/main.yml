@@ -1,28 +1,35 @@
 ---
 - name: Check if mise is installed
   ansible.builtin.shell: command -v mise || echo "missing"
-  register: mise_check
+  register: languages_mise_check
   changed_when: false
   become: false
 
 - name: Install mise (using OS package manager where possible or fallback)
+  become: false
   block:
     - name: Install mise on macOS (Homebrew)
       community.general.homebrew:
         name: mise
         state: present
       when: ansible_os_family == 'Darwin'
-      
-    - name: Install mise on Linux (Apt curl)
-      ansible.builtin.shell: curl https://mise.run | sh
-      args:
-        creates: "{{ ansible_env.HOME }}/.local/bin/mise"
+
+    - name: Download mise install script on Linux
+      ansible.builtin.get_url:
+        url: https://mise.run
+        dest: /tmp/install_mise.sh
+        mode: '0755'
       when: ansible_os_family == 'Debian'
-  become: false
+
+    - name: Install mise on Linux (Apt curl)
+      ansible.builtin.command: sh /tmp/install_mise.sh
+      args:
+        creates: "{{ ansible_user_dir }}/.local/bin/mise"
+      when: ansible_os_family == 'Debian'
 
 - name: Ensure mise config directory exists
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/mise"
+    path: "{{ ansible_user_dir }}/.config/mise"
     state: directory
     mode: '0755'
   become: false
@@ -30,14 +37,13 @@
 - name: Configure global tools in mise (Java 25 and Maven)
   ansible.builtin.command: "mise use --global java@25 maven@latest"
   environment:
-    PATH: "/opt/homebrew/bin:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "/opt/homebrew/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_env.PATH }}"
   changed_when: false
   become: false
 
 - name: Install configured tools via mise
   ansible.builtin.command: "mise install"
   environment:
-    PATH: "/opt/homebrew/bin:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
-  args:
-    creates: "{{ ansible_env.HOME }}/.local/share/mise/installs/java/25/bin/java"
+    PATH: "/opt/homebrew/bin:{{ ansible_user_dir }}/.local/bin:{{ ansible_env.PATH }}"
+  changed_when: false
   become: false
