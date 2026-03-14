@@ -1,0 +1,35 @@
+export ZSH="$HOME/.oh-my-zsh"
+
+ZSH_THEME="{{ zsh_theme }}"
+
+# Plugins
+plugins=(
+  git
+  fzf
+  zsh-syntax-highlighting
+  zsh-autosuggestions
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+{% if ansible_os_family == 'Darwin' %}
+# macOS specific Homebrew path setup
+if [ -d "/opt/homebrew/bin" ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{% endif %}
+
+# mise
+if command -v mise >/dev/null; then
+  eval "$(mise activate zsh)"
+elif [ -x "$HOME/.local/bin/mise" ]; then
+  eval "$("$HOME/.local/bin/mise" activate zsh)"
+fi
+
+# Source local, machine-specific configs (ignored by ansible)
+if [ -f "$HOME/.zshrc.local" ]; then
+  source "$HOME/.zshrc.local"
+fi

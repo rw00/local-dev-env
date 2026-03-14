@@ -1,0 +1,24 @@
+---
+- name: macOS | Update Homebrew
+  community.general.homebrew:
+    update_homebrew: yes
+  become: false
+
+- name: macOS | Install basic system tools
+  community.general.homebrew:
+    name:
+      - curl
+      - git
+      - fzf
+    state: present
+  become: false
+
+- name: macOS | Install Casks (Raycast, Docker, Ghostty)
+  community.general.homebrew_cask:
+    name:
+      - raycast
+      - docker
+      - ghostty
+    state: present
+    accept_external_apps: yes
+  become: false

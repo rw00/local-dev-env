@@ -1,0 +1,43 @@
+---
+- name: Check if mise is installed
+  ansible.builtin.shell: command -v mise || echo "missing"
+  register: mise_check
+  changed_when: false
+  become: false
+
+- name: Install mise (using OS package manager where possible or fallback)
+  block:
+    - name: Install mise on macOS (Homebrew)
+      community.general.homebrew:
+        name: mise
+        state: present
+      when: ansible_os_family == 'Darwin'
+      
+    - name: Install mise on Linux (Apt curl)
+      ansible.builtin.shell: curl https://mise.run | sh
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/bin/mise"
+      when: ansible_os_family == 'Debian'
+  become: false
+
+- name: Ensure mise config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/mise"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Configure global tools in mise (Java 25 and Maven)
+  ansible.builtin.command: "mise use --global java@25 maven@latest"
+  environment:
+    PATH: "/opt/homebrew/bin:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+  become: false
+
+- name: Install configured tools via mise
+  ansible.builtin.command: "mise install"
+  environment:
+    PATH: "/opt/homebrew/bin:{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  args:
+    creates: "{{ ansible_env.HOME }}/.local/share/mise/installs/java/25/bin/java"
+  become: false

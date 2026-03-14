@@ -1,0 +1,10 @@
+---
+- name: Setup Local Development Environment
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  roles:
+    - role: system
+    - role: terminal
+    - role: languages

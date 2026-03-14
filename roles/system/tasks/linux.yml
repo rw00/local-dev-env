@@ -1,0 +1,23 @@
+---
+- name: Linux | Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  become: true
+
+- name: Linux | Install basic system tools
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - fzf
+      - zsh
+    state: present
+  become: true
+
+- name: Linux | Install Docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+    state: present
+  become: true
